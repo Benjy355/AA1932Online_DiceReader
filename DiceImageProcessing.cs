@@ -50,23 +50,25 @@ namespace AA_DiceReader
                 {
                     // We we have to make sure it doesn't intersect with a known dice
                     mrPixel = img.GetPixel(x, y);
-                    Rectangle tempRec = new Rectangle(x, y, 1, 1);
                     Boolean skipThisDice = false;
-                    foreach (Rectangle knownDie in knownDice)
-                    {
-                        if (knownDie.IntersectsWith(tempRec))
+                    if (mrPixel == diceColor)
+                    { // OH BABY WE FOUND A DICE, (hopefully)
+                        Rectangle tempRec = new Rectangle(x, y, 1, 1);
+                        foreach (Rectangle knownDie in knownDice)
                         {
-                            skipThisDice = true;
+                            if (knownDie.IntersectsWith(tempRec))
+                            {
+                                skipThisDice = true;
+                                break;
+                            }
+                        }
+                        if (!skipThisDice)
+                        {
+                            foundDice = true;
+                            diceX = x;
+                            diceY = y;
                             break;
                         }
-                    }
-                    if (!skipThisDice && 
-                        mrPixel == diceColor)
-                    { // OH BABY WE FOUND A DICE, (hopefully)
-                        foundDice = true;
-                        diceX = x;
-                        diceY = y;
-                        break;
                     }
                 }
             }
