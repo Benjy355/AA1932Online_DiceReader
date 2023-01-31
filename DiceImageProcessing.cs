@@ -17,6 +17,8 @@ namespace AA_DiceReader
         public static Color attackerDiceColour = Color.FromArgb(164, 31, 22);
         public static Color defenderDiceColour = Color.FromArgb(36, 36, 34);
 
+        public static Collection<Rectangle> knownDice = new Collection<Rectangle>();
+
         // Colour of background is either 000000, or 030303
         // We know the background colour's max RGB values are 3, so if RGB < 4 we hit background
         public static Boolean isBackground(Color colour)
@@ -44,14 +46,26 @@ namespace AA_DiceReader
             for (int y = start.Y; y < img.Height &&
                 !foundDice; y++)
             {
-                for (int x = start.X; x < img.Width; x++)
+                for (int x = 0; x < img.Width; x++) // We used to do start.X here, but that was a bad idea.
                 {
-                    mrPixel = img.GetPixel(x, y); //283 183
-                    if (mrPixel == diceColor)
+                    // We we have to make sure it doesn't intersect with a known dice
+                    mrPixel = img.GetPixel(x, y);
+                    Rectangle tempRec = new Rectangle(x, y, 1, 1);
+                    Boolean skipThisDice = false;
+                    foreach (Rectangle knownDie in knownDice)
+                    {
+                        if (knownDie.IntersectsWith(tempRec))
+                        {
+                            skipThisDice = true;
+                            break;
+                        }
+                    }
+                    if (!skipThisDice && 
+                        mrPixel == diceColor)
                     { // OH BABY WE FOUND A DICE, (hopefully)
                         foundDice = true;
-                        diceY = y;
                         diceX = x;
+                        diceY = y;
                         break;
                     }
                 }
@@ -95,7 +109,7 @@ namespace AA_DiceReader
                     diceImage.SetPixel(x, y, img.GetPixel(x + diceX, y + diceY));
                 }
             }
-
+            knownDice.Add(new Rectangle(diceX, diceY, diceWidth, diceHeight));
             DiceImageReference diceRef = new DiceImageReference(diceImage, new Point(diceX, diceY), 0, diceTeam);
 
             return diceRef;
@@ -116,7 +130,7 @@ namespace AA_DiceReader
             DiceImageReference lastResult = DiceImageReference.NullReference();
             Boolean firstRun = true;
 
-            // NEED TO CHECKF OR TEAM
+            // NEED TO CHECK FOR TEAM
             // Loop through the picture until we stop finding dice
             while (firstRun == true ||
                 !lastResult.isNull())
@@ -127,7 +141,8 @@ namespace AA_DiceReader
                 newStart.X += lastResult.size.Width;
 
                 lastResult = DiceImageProcessor.findDicePicture(img, newStart, team);
-                finalCollection.Add(lastResult);
+                if (!lastResult.isNull())
+                    finalCollection.Add(lastResult);
             }
 
             return finalCollection;
