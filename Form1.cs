@@ -67,14 +67,15 @@ namespace AA_DiceReader
             {
                 Bitmap img = (Bitmap)((PictureBox)enumedControl).Image;
 
-                Collection<DiceImageReference> diceReferences = DiceImageProcessor.extractDiceRefsFromImage(img, DiceTeam.Attacker);
+                Collection<DiceImageReference> diceReferences = DiceImageProcessor.extractDiceRefsFromImage(img);
 
-                //DiceImageReference newReference = DiceImageProcessor.findDicePicture(img, Point.Empty, DiceTeam.Attacker);
-                foreach (DiceImageReference diceRef in diceReferences) {
+                foreach (DiceImageReference diceRef in diceReferences)
+                {
                     PictureBox newPictureBox = new PictureBox();
                     newPictureBox.Image = diceRef.image;
                     newPictureBox.BorderStyle = BorderStyle.FixedSingle;
                     newPictureBox.SizeMode = PictureBoxSizeMode.AutoSize;
+                    toolTip1.SetToolTip(newPictureBox, diceRef.diceValue.ToString());
 
                     singleDiceImageFlow.Controls.Add(newPictureBox);
                 }

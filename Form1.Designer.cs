@@ -29,31 +29,14 @@
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            this.statusStrip1 = new System.Windows.Forms.StatusStrip();
-            this.statusText = new System.Windows.Forms.ToolStripStatusLabel();
             this.clipboardCheckTimer = new System.Windows.Forms.Timer(this.components);
             this.label1 = new System.Windows.Forms.Label();
             this.imagesFlow = new System.Windows.Forms.FlowLayoutPanel();
             this.runCheckBox1 = new System.Windows.Forms.CheckBox();
             this.scanDiceButton = new System.Windows.Forms.Button();
             this.singleDiceImageFlow = new System.Windows.Forms.FlowLayoutPanel();
-            this.statusStrip1.SuspendLayout();
+            this.toolTip1 = new System.Windows.Forms.ToolTip(this.components);
             this.SuspendLayout();
-            // 
-            // statusStrip1
-            // 
-            this.statusStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.statusText});
-            this.statusStrip1.Location = new System.Drawing.Point(0, 624);
-            this.statusStrip1.Name = "statusStrip1";
-            this.statusStrip1.Size = new System.Drawing.Size(1097, 22);
-            this.statusStrip1.TabIndex = 0;
-            this.statusStrip1.Text = "statusStrip1";
-            // 
-            // statusText
-            // 
-            this.statusText.Name = "statusText";
-            this.statusText.Size = new System.Drawing.Size(0, 17);
             // 
             // clipboardCheckTimer
             // 
@@ -102,6 +85,7 @@
             // 
             // scanDiceButton
             // 
+            this.scanDiceButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.scanDiceButton.Location = new System.Drawing.Point(12, 526);
             this.scanDiceButton.Name = "scanDiceButton";
             this.scanDiceButton.Size = new System.Drawing.Size(101, 23);
@@ -121,7 +105,13 @@
             this.singleDiceImageFlow.Name = "singleDiceImageFlow";
             this.singleDiceImageFlow.Size = new System.Drawing.Size(510, 468);
             this.singleDiceImageFlow.TabIndex = 5;
-            this.singleDiceImageFlow.WrapContents = false;
+            // 
+            // toolTip1
+            // 
+            this.toolTip1.AutoPopDelay = 5000;
+            this.toolTip1.InitialDelay = 100;
+            this.toolTip1.ReshowDelay = 100;
+            this.toolTip1.ShowAlways = true;
             // 
             // MainForm
             // 
@@ -133,26 +123,21 @@
             this.Controls.Add(this.runCheckBox1);
             this.Controls.Add(this.imagesFlow);
             this.Controls.Add(this.label1);
-            this.Controls.Add(this.statusStrip1);
             this.Name = "MainForm";
             this.Text = "A&A Dice Reader";
             this.Load += new System.EventHandler(this.MainForm_Load);
-            this.statusStrip1.ResumeLayout(false);
-            this.statusStrip1.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 
         }
 
         #endregion
-
-        private StatusStrip statusStrip1;
-        private ToolStripStatusLabel statusText;
         private System.Windows.Forms.Timer clipboardCheckTimer;
         private Label label1;
         private FlowLayoutPanel imagesFlow;
         private CheckBox runCheckBox1;
         private Button scanDiceButton;
         private FlowLayoutPanel singleDiceImageFlow;
+        private ToolTip toolTip1;
     }
 }

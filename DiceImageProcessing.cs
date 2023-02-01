@@ -2,22 +2,34 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
 
 namespace AA_DiceReader
 {
-    internal class DiceImageProcessor
+    internal static class DiceImageProcessor
     {
-        // Size of dice is 54x54 at my screen resolution, probably don't trust that number
-        // BUT, if we find a single dice's size, we can use that for every other dice.
-
         // Colour of attacker dice is A41F16, colour of defender dice is 242422
         public static Color attackerDiceColour = Color.FromArgb(164, 31, 22);
         public static Color defenderDiceColour = Color.FromArgb(36, 36, 34);
 
+        public static Collection<Point> possibleDiceWhiteDotLocations = new Collection<Point>();
+
         public static Collection<Rectangle> knownDice = new Collection<Rectangle>();
+
+        // 3 and 5 are missing because they are just combos of other ones, ezpz
+        static DiceImageProcessor()
+        {
+            possibleDiceWhiteDotLocations.Add(new Point(27, 27)); // 1
+            possibleDiceWhiteDotLocations.Add(new Point(10, 10)); // 2
+            possibleDiceWhiteDotLocations.Add(new Point(43, 43)); // 2
+            possibleDiceWhiteDotLocations.Add(new Point(43, 10)); // 4
+            possibleDiceWhiteDotLocations.Add(new Point(10, 43)); // 4
+            possibleDiceWhiteDotLocations.Add(new Point(10, 26)); // 6
+            possibleDiceWhiteDotLocations.Add(new Point(42, 26)); // 6
+        }
 
         // Colour of background is either 000000, or 030303
         // We know the background colour's max RGB values are 3, so if RGB < 4 we hit background
@@ -29,18 +41,13 @@ namespace AA_DiceReader
         }
 
         // Returns DiceImageReference.NullReference when no dice image found
-        protected static DiceImageReference findDicePicture(Bitmap img, Point start, DiceTeam diceTeam)
+        public static DiceImageReference findDicePicture(Bitmap img, Point start)
         {
-            Color diceColor;
-            if (diceTeam == DiceTeam.Attacker)
-                diceColor = DiceImageProcessor.attackerDiceColour;
-            else
-                diceColor = DiceImageProcessor.defenderDiceColour;
-
             Boolean foundDice = false;
             int diceX = 0, diceY = 0;
             int diceWidth = 0, diceHeight = 0;
             Color mrPixel;
+            DiceTeam diceTeam = DiceTeam.NULL;
 
             // Loop through our Y as we search for the color value of our choice, once found stop both loops and start the 'find the height' loop
             for (int y = start.Y; y < img.Height &&
@@ -51,7 +58,8 @@ namespace AA_DiceReader
                     // We we have to make sure it doesn't intersect with a known dice
                     mrPixel = img.GetPixel(x, y);
                     Boolean skipThisDice = false;
-                    if (mrPixel == diceColor)
+                    if (mrPixel == DiceImageProcessor.attackerDiceColour ||
+                        mrPixel == DiceImageProcessor.defenderDiceColour)
                     { // OH BABY WE FOUND A DICE, (hopefully)
                         Rectangle tempRec = new Rectangle(x, y, 1, 1);
                         foreach (Rectangle knownDie in knownDice)
@@ -67,6 +75,11 @@ namespace AA_DiceReader
                             foundDice = true;
                             diceX = x;
                             diceY = y;
+
+                            if (mrPixel == DiceImageProcessor.attackerDiceColour) diceTeam = DiceTeam.Attacker; 
+                            else
+                            if (mrPixel == DiceImageProcessor.defenderDiceColour) diceTeam = DiceTeam.Defender;
+
                             break;
                         }
                     }
@@ -112,27 +125,25 @@ namespace AA_DiceReader
                 }
             }
             knownDice.Add(new Rectangle(diceX, diceY, diceWidth, diceHeight));
-            DiceImageReference diceRef = new DiceImageReference(diceImage, new Point(diceX, diceY), 0, diceTeam);
+            DiceImageReference diceRef = 
+                new DiceImageReference(diceImage, 
+                new Point(diceX, diceY), 
+                DiceImageProcessor.getDiceValueFromImg(diceImage), 
+                diceTeam);
 
             return diceRef;
         }
 
-        /*
-         * THE PLAN:
-         * GO THROUGH PIXEL BY PIXEL, FIND THE FIRST INSTANCE OF THE ATTACK COLOUR, ATTACKER ALWAYS ROLLS FIRST
-         * WOW WE FOUND THE PIXEL, GO DOWN UNTIL WE FIND THE HEIGHT OF THE DICE; WIDTH = HEIGHT
-         */
-
         // Go through picture, find all the dice for BOTH TEAMS, create collection containing all of them and return
-        public static Collection<DiceImageReference> extractDiceRefsFromImage(Bitmap img, DiceTeam team)
+        public static Collection<DiceImageReference> extractDiceRefsFromImage(Bitmap img, Point firstStart)
         {
             Collection<DiceImageReference> finalCollection = new Collection<DiceImageReference>();
 
-            Point newStart = new Point(0, 0);
+            Point newStart = firstStart;
             DiceImageReference lastResult = DiceImageReference.NullReference();
             Boolean firstRun = true;
 
-            // NEED TO CHECK FOR TEAM
+            // NEED TO CHECK FOR TEAM SO WE DON'T HAVE TO RUN THIS SHIT TWICE ON OUR FORM1
             // Loop through the picture until we stop finding dice
             while (firstRun == true ||
                 !lastResult.isNull())
@@ -142,12 +153,37 @@ namespace AA_DiceReader
                 newStart = lastResult.location;
                 newStart.X += lastResult.size.Width;
 
-                lastResult = DiceImageProcessor.findDicePicture(img, newStart, team);
+                lastResult = DiceImageProcessor.findDicePicture(img, newStart);
                 if (!lastResult.isNull())
                     finalCollection.Add(lastResult);
             }
 
             return finalCollection;
+        }
+        public static Collection<DiceImageReference> extractDiceRefsFromImage(Bitmap img)
+        {
+            return extractDiceRefsFromImage(img, new Point(0, 0));
+        }
+
+        // Dice images in game files are vector graphics, so they *could* be any size, but things will always be relative.
+        // Base size we work off of is 54x54
+        // Returns int based on number of white pixels found in locations provided by possibleDiceWhiteDotLocations
+        public static int getDiceValueFromImg(Bitmap img)
+        {
+            int count = 0;
+            Decimal adjustment = (Decimal)54 / (Decimal)(img.Width); // images should be square
+
+            foreach (Point possibleLocation in DiceImageProcessor.possibleDiceWhiteDotLocations)
+            {
+                int checkX = (int)(Math.Round(possibleLocation.X * adjustment));
+                int checkY = (int)(Math.Round(possibleLocation.Y * adjustment));
+                Color pixel = img.GetPixel(checkX, checkY);
+                if (pixel.R == 255 &&
+                    pixel.G == 255 &&
+                    pixel.B == 255)
+                    count++;
+            }
+            return count;
         }
     }
 }
